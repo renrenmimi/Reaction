@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚡ Reaction Time Test</title>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-0: #070812;
+        --bg-1: #0a0d1f;
+        --bg-2: #0f1230;
+        --panel: rgba(10, 14, 36, 0.58);
+        --panel-border: rgba(155, 208, 255, 0.18);
+        --text-main: #f3f7ff;
+        --text-soft: #a4b8d6;
+        --cyan: #5ef6ff;
+        --magenta: #ff4ac4;
+        --blue: #3f7bff;
+        --green: #68ffb5;
+        --red: #ff4569;
+        --yellow: #ffd166;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body,
+      #root {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        overflow: hidden;
+        font-family: "Rajdhani", sans-serif;
+        color: var(--text-main);
+        background: var(--bg-0);
+      }
+
+      .app {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        padding: clamp(14px, 2vw, 28px);
+        display: grid;
+        place-items: center;
+        isolation: isolate;
+        overflow: hidden;
+        cursor: pointer;
+        background:
+          radial-gradient(circle at 10% 20%, rgba(94, 246, 255, 0.14), transparent 36%),
+          radial-gradient(circle at 82% 14%, rgba(255, 74, 196, 0.13), transparent 42%),
+          radial-gradient(circle at 58% 80%, rgba(63, 123, 255, 0.16), transparent 45%),
+          linear-gradient(125deg, var(--bg-0), var(--bg-1) 38%, var(--bg-2));
+        background-size: 160% 160%;
+        transition: background-color 0.65s ease, filter 0.5s ease;
+        animation: backdropDrift 16s ease-in-out infinite alternate;
+      }
+
+      .app::before,
+      .app::after {
+        content: "";
+        position: absolute;
+        inset: -35%;
+        pointer-events: none;
+        z-index: -4;
+      }
+
+      .app::before {
+        background:
+          conic-gradient(
+            from 20deg,
+            rgba(94, 246, 255, 0.18),
+            rgba(63, 123, 255, 0.04),
+            rgba(255, 74, 196, 0.14),
+            rgba(94, 246, 255, 0.2)
+          );
+        filter: blur(96px);
+        animation: slowSpin 20s linear infinite;
+      }
+
+      .app::after {
+        background:
+          linear-gradient(
+            160deg,
+            rgba(255, 255, 255, 0.04),
+            rgba(255, 255, 255, 0) 35%
+          );
+        mix-blend-mode: screen;
+        animation: sheen 8s ease-in-out infinite;
+      }
+
+      .state-waiting {
+        background:
+          radial-gradient(circle at 50% 40%, rgba(255, 69, 105, 0.18), transparent 55%),
+          radial-gradient(circle at 20% 20%, rgba(255, 90, 120, 0.14), transparent 44%),
+          linear-gradient(130deg, #1f0913, #12070f 45%, #220915);
+        animation-duration: 11s;
+      }
+
+      .state-ready {
+        background:
+          radial-gradient(circle at 50% 42%, rgba(104, 255, 181, 0.29), transparent 58%),
+          radial-gradient(circle at 25% 18%, rgba(94, 246, 255, 0.16), transparent 36%),
+          linear-gradient(140deg, #051417, #051018 43%, #081f15);
+      }
+
+      .state-too_soon {
+        background:
+          radial-gradient(circle at 50% 45%, rgba(255, 74, 196, 0.24), transparent 52%),
+          radial-gradient(circle at 78% 22%, rgba(255, 69, 105, 0.18), transparent 42%),
+          linear-gradient(135deg, #12081c, #0a0717 38%, #200927);
+      }
+
+      .state-finished {
+        cursor: default;
+      }
+
+      .ambient {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: -2;
+      }
+
+      .orb {
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(42px);
+        opacity: 0.55;
+        mix-blend-mode: screen;
+      }
+
+      .orb-1 {
+        width: 29vmax;
+        height: 29vmax;
+        background: radial-gradient(circle, rgba(63, 123, 255, 0.38), transparent 68%);
+        top: -8vmax;
+        left: -8vmax;
+        animation: orbDriftA 18s ease-in-out infinite alternate;
+      }
+
+      .orb-2 {
+        width: 23vmax;
+        height: 23vmax;
+        background: radial-gradient(circle, rgba(255, 74, 196, 0.36), transparent 70%);
+        right: -6vmax;
+        top: 10%;
+        animation: orbDriftB 14s ease-in-out infinite alternate;
+      }
+
+      .orb-3 {
+        width: 21vmax;
+        height: 21vmax;
+        background: radial-gradient(circle, rgba(94, 246, 255, 0.36), transparent 72%);
+        bottom: -9vmax;
+        left: 28%;
+        animation: orbDriftC 16s ease-in-out infinite alternate;
+      }
+
+      .particle-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .particle {
+        position: absolute;
+        width: var(--size);
+        height: var(--size);
+        left: var(--left);
+        top: 110%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
+        box-shadow: 0 0 14px rgba(148, 217, 255, 0.55);
+        opacity: 0;
+        transform: translate3d(0, 0, 0) scale(0.7);
+        animation: particleRise var(--dur) linear infinite;
+        animation-delay: var(--delay);
+      }
+
+      .scanline {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        z-index: 3;
+        background:
+          repeating-linear-gradient(
+            to bottom,
+            rgba(255, 110, 140, 0) 0,
+            rgba(255, 110, 140, 0) 2px,
+            rgba(255, 110, 140, 0.14) 3px,
+            rgba(255, 110, 140, 0.14) 4px
+          );
+        animation: scanMove 0.95s linear infinite;
+      }
+
+      .state-waiting .scanline {
+        opacity: 0.36;
+      }
+
+      .ready-flash {
+        position: absolute;
+        inset: -8%;
+        background:
+          radial-gradient(circle at center, rgba(115, 255, 190, 0.85), rgba(94, 246, 255, 0.18) 36%, transparent 68%);
+        mix-blend-mode: screen;
+        pointer-events: none;
+        animation: readyBlast 0.52s ease-out both;
+        z-index: 4;
+      }
+
+      .ripple {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0.3);
+        pointer-events: none;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.6), rgba(94, 246, 255, 0));
+        border: 1px solid rgba(94, 246, 255, 0.5);
+        animation: rippleOut 620ms cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+        z-index: 5;
+      }
+
+      .panel {
+        position: relative;
+        width: min(940px, 100%);
+        min-height: min(620px, calc(100vh - 42px));
+        border-radius: 30px;
+        padding: clamp(24px, 4.4vw, 42px);
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.12),
+          0 18px 70px rgba(2, 8, 24, 0.64),
+          0 0 60px rgba(94, 246, 255, 0.08);
+        backdrop-filter: blur(16px) saturate(1.2);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        animation: panelFloat 9s ease-in-out infinite;
+      }
+
+      .state-ready .panel {
+        border-color: rgba(128, 255, 187, 0.45);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.18),
+          0 20px 70px rgba(3, 18, 10, 0.56),
+          0 0 66px rgba(120, 255, 189, 0.2);
+        animation: panelFloat 9s ease-in-out infinite, readyShake 0.42s linear 1;
+      }
+
+      .state-waiting .panel {
+        border-color: rgba(255, 110, 140, 0.38);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.12),
+          0 20px 80px rgba(28, 5, 10, 0.72),
+          0 0 68px rgba(255, 86, 122, 0.18);
+      }
+
+      .hud {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .badge,
+      .pulse-pill {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(171, 195, 255, 0.25);
+        background: rgba(11, 16, 36, 0.54);
+        color: #d5e5ff;
+        font-size: clamp(14px, 2.2vw, 18px);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .pulse-pill {
+        animation: pulseText 1.75s ease-in-out infinite;
+      }
+
+      .state-ready .pulse-pill {
+        color: #dfffee;
+        border-color: rgba(104, 255, 181, 0.54);
+        box-shadow: 0 0 24px rgba(110, 255, 186, 0.33);
+      }
+
+      .state-waiting .pulse-pill {
+        color: #ffd6de;
+        border-color: rgba(255, 69, 105, 0.52);
+        box-shadow: 0 0 24px rgba(255, 69, 105, 0.28);
+        animation-duration: 0.84s;
+      }
+
+      .live-stage {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: clamp(12px, 3vw, 22px);
+        gap: 14px;
+        flex: 1;
+      }
+
+      .kicker {
+        font-size: clamp(16px, 2.1vw, 22px);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--text-soft);
+      }
+
+      .headline {
+        margin: 0;
+        font-family: "Orbitron", sans-serif;
+        line-height: 0.95;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: clamp(46px, 10vw, 122px);
+        text-shadow:
+          0 0 18px rgba(94, 246, 255, 0.35),
+          0 0 40px rgba(63, 123, 255, 0.24);
+      }
+
+      .headline.idle {
+        animation: breatheGlow 2.1s ease-in-out infinite;
+      }
+
+      .headline.waiting {
+        color: #ffd0d8;
+        text-shadow:
+          0 0 20px rgba(255, 74, 128, 0.44),
+          0 0 55px rgba(255, 69, 105, 0.34);
+        animation: heartbeat 0.88s ease-in-out infinite;
+      }
+
+      .headline.ready {
+        color: #d9ffe8;
+        text-shadow:
+          0 0 22px rgba(104, 255, 181, 0.75),
+          0 0 44px rgba(104, 255, 181, 0.38),
+          0 0 88px rgba(94, 246, 255, 0.28);
+        animation: urgentScale 0.56s ease-in-out infinite;
+      }
+
+      .headline.too-soon {
+        color: #ffd4ff;
+        position: relative;
+        animation: glitchShake 0.52s steps(2, end) infinite;
+      }
+
+      .headline.too-soon::before,
+      .headline.too-soon::after {
+        content: attr(data-text);
+        position: absolute;
+        inset: 0;
+        mix-blend-mode: screen;
+        opacity: 0.7;
+      }
+
+      .headline.too-soon::before {
+        color: #5ef6ff;
+        transform: translate(-2px, 0);
+        clip-path: inset(0 0 54% 0);
+      }
+
+      .headline.too-soon::after {
+        color: #ff4ac4;
+        transform: translate(2px, 0);
+        clip-path: inset(46% 0 0 0);
+      }
+
+      .subtext {
+        max-width: 640px;
+        margin: 0;
+        color: var(--text-soft);
+        letter-spacing: 0.04em;
+        font-size: clamp(18px, 3vw, 30px);
+        font-weight: 500;
+      }
+
+      .result-shell {
+        display: grid;
+        justify-items: center;
+        gap: 14px;
+        animation: resultIn 0.58s cubic-bezier(0.2, 0.95, 0.3, 1.1) both;
+      }
+
+      .reaction-number {
+        margin: 0;
+        font-family: "Orbitron", sans-serif;
+        font-size: clamp(70px, 16vw, 178px);
+        line-height: 0.88;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
+        text-shadow:
+          0 0 22px rgba(94, 246, 255, 0.68),
+          0 0 52px rgba(63, 123, 255, 0.42);
+      }
+
+      .rating-chip {
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        padding: 8px 18px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: clamp(14px, 2.1vw, 18px);
+        background: rgba(8, 16, 28, 0.46);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+
+      .state-guide {
+        text-align: center;
+        color: #8fa2c6;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        font-size: clamp(13px, 1.8vw, 15px);
+      }
+
+      .finished {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(12px, 2.5vw, 20px);
+        height: 100%;
+      }
+
+      .finished-title {
+        margin: 0;
+        font-family: "Orbitron", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: clamp(30px, 5vw, 52px);
+      }
+
+      .average-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: end;
+        gap: 10px;
+      }
+
+      .average-label {
+        color: #9eb6db;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: clamp(13px, 1.8vw, 16px);
+      }
+
+      .average-number {
+        margin: 0;
+        font-family: "Orbitron", sans-serif;
+        font-size: clamp(48px, 9vw, 90px);
+        line-height: 0.9;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.03em;
+        text-shadow: 0 0 28px rgba(94, 246, 255, 0.52);
+      }
+
+      .summary-rating {
+        justify-self: start;
+      }
+
+      .round-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .round-card {
+        border-radius: 16px;
+        padding: 12px;
+        background: rgba(10, 16, 35, 0.72);
+        border: 1px solid rgba(168, 194, 255, 0.2);
+        display: grid;
+        gap: 7px;
+        transform: translateY(18px) scale(0.96);
+        opacity: 0;
+        animation: cardIn 0.45s cubic-bezier(0.22, 0.95, 0.34, 1) forwards;
+      }
+
+      .round-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #98b2d9;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 11px;
+      }
+
+      .round-ms {
+        font-family: "Orbitron", sans-serif;
+        font-size: clamp(20px, 3vw, 28px);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .perf-bar {
+        height: 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+
+      .perf-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, rgba(94, 246, 255, 0.95), rgba(255, 74, 196, 0.95));
+      }
+
+      .restart-btn {
+        appearance: none;
+        border: 0;
+        align-self: center;
+        margin-top: 6px;
+        padding: 13px 28px;
+        border-radius: 14px;
+        cursor: pointer;
+        color: white;
+        background: linear-gradient(120deg, #42dbff, #3f7bff 45%, #ff4ac4);
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        font-size: clamp(15px, 2.4vw, 18px);
+        box-shadow: 0 0 0 0 rgba(94, 246, 255, 0.4), 0 14px 24px rgba(3, 10, 25, 0.55);
+        transition: transform 0.18s ease, box-shadow 0.25s ease, filter 0.25s ease;
+      }
+
+      .restart-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 0 0 7px rgba(94, 246, 255, 0.15), 0 18px 32px rgba(2, 8, 22, 0.64);
+        filter: brightness(1.08);
+      }
+
+      .restart-btn:active {
+        transform: translateY(1px) scale(0.985);
+      }
+
+      .sparkle-wrap {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .spark {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        left: var(--left);
+        bottom: -10px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.75);
+        opacity: 0;
+        animation: spark 1.9s ease-out infinite;
+        animation-delay: var(--delay);
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      @keyframes backdropDrift {
+        0% {
+          background-position: 0% 52%;
+        }
+        100% {
+          background-position: 100% 48%;
+        }
+      }
+
+      @keyframes slowSpin {
+        to {
+          transform: rotate(1turn);
+        }
+      }
+
+      @keyframes sheen {
+        0%,
+        100% {
+          transform: translateX(-6%) translateY(-4%) rotate(0deg);
+          opacity: 0.45;
+        }
+        50% {
+          transform: translateX(5%) translateY(4%) rotate(7deg);
+          opacity: 0.65;
+        }
+      }
+
+      @keyframes orbDriftA {
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          transform: translate(5vmax, 4vmax) scale(1.14);
+        }
+      }
+
+      @keyframes orbDriftB {
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          transform: translate(-5vmax, 7vmax) scale(1.1);
+        }
+      }
+
+      @keyframes orbDriftC {
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          transform: translate(6vmax, -4vmax) scale(1.18);
+        }
+      }
+
+      @keyframes particleRise {
+        0% {
+          transform: translate3d(0, 0, 0) scale(0.75);
+          opacity: 0;
+        }
+        12% {
+          opacity: 0.65;
+        }
+        80% {
+          opacity: 0.35;
+        }
+        100% {
+          transform: translate3d(0, -125vh, 0) scale(1.1);
+          opacity: 0;
+        }
+      }
+
+      @keyframes scanMove {
+        0% {
+          transform: translateY(-8px);
+        }
+        100% {
+          transform: translateY(8px);
+        }
+      }
+
+      @keyframes readyBlast {
+        0% {
+          transform: scale(0.4);
+          opacity: 0.95;
+        }
+        70% {
+          opacity: 0.35;
+        }
+        100% {
+          transform: scale(1.6);
+          opacity: 0;
+        }
+      }
+
+      @keyframes rippleOut {
+        0% {
+          opacity: 0.95;
+          transform: translate(-50%, -50%) scale(0.2);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(22);
+        }
+      }
+
+      @keyframes panelFloat {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-4px);
+        }
+      }
+
+      @keyframes pulseText {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.78;
+          transform: scale(0.98);
+        }
+      }
+
+      @keyframes breatheGlow {
+        0%,
+        100% {
+          transform: scale(1);
+          text-shadow:
+            0 0 16px rgba(94, 246, 255, 0.35),
+            0 0 38px rgba(63, 123, 255, 0.23);
+        }
+        50% {
+          transform: scale(1.035);
+          text-shadow:
+            0 0 26px rgba(94, 246, 255, 0.62),
+            0 0 62px rgba(63, 123, 255, 0.35);
+        }
+      }
+
+      @keyframes heartbeat {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        35% {
+          transform: scale(1.035);
+          opacity: 0.92;
+        }
+      }
+
+      @keyframes urgentScale {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.08);
+        }
+      }
+
+      @keyframes glitchShake {
+        0%,
+        100% {
+          transform: translate(0);
+        }
+        20% {
+          transform: translate(-1px, 1px);
+        }
+        40% {
+          transform: translate(2px, -1px);
+        }
+        60% {
+          transform: translate(-1px, -1px);
+        }
+        80% {
+          transform: translate(1px, 1px);
+        }
+      }
+
+      @keyframes resultIn {
+        from {
+          opacity: 0;
+          transform: scale(0.84) translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @keyframes cardIn {
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes spark {
+        0% {
+          transform: translateY(0) scale(0.7);
+          opacity: 0;
+        }
+        20% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-110vh) scale(1.1);
+          opacity: 0;
+        }
+      }
+
+      @keyframes readyShake {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        20% {
+          transform: translate(-4px, 0);
+        }
+        40% {
+          transform: translate(4px, 1px);
+        }
+        60% {
+          transform: translate(-3px, -1px);
+        }
+        80% {
+          transform: translate(3px, 0);
+        }
+      }
+
+      @media (max-width: 900px) {
+        .panel {
+          min-height: min(680px, calc(100vh - 24px));
+          border-radius: 24px;
+        }
+
+        .round-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 600px) {
+        .app {
+          padding: 10px;
+        }
+
+        .panel {
+          min-height: calc(100vh - 20px);
+          padding: 20px 16px;
+          border-radius: 20px;
+        }
+
+        .hud {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .round-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .restart-btn {
+          width: 100%;
+          padding: 15px 20px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel">
+      const { useCallback, useEffect, useMemo, useRef, useState } = React;
+
+      const GAME_STATES = {
+        IDLE: "IDLE",
+        WAITING: "WAITING",
+        READY: "READY",
+        RESULT: "RESULT",
+        TOO_SOON: "TOO_SOON",
+        FINISHED: "FINISHED",
+      };
+
+      const TOTAL_ROUNDS = 5;
+      const MIN_DELAY_MS = 1000;
+      const MAX_DELAY_MS = 5000;
+      const RIPPLE_DURATION_MS = 620;
+
+      const RATING_TIERS = [
+        { max: 200, label: "Lightning Fast!", color: "#6bffe5", icon: "⚡" },
+        { max: 300, label: "Quick!", color: "#6fc6ff", icon: "🚀" },
+        { max: 400, label: "Average", color: "#ffd166", icon: "🎯" },
+        { max: Number.POSITIVE_INFINITY, label: "Slow...", color: "#ff7b8f", icon: "🐢" },
+      ];
+
+      const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+        left: `${(i * 97) % 100}%`,
+        size: `${4 + ((i * 5) % 7)}px`,
+        dur: `${9 + (i % 7)}s`,
+        delay: `${-((i * 0.9) % 9)}s`,
+      }));
+
+      const SPARKLES = Array.from({ length: 20 }, (_, i) => ({
+        left: `${(i * 31) % 100}%`,
+        delay: `${(i % 10) * 0.14}s`,
+      }));
+
+      const getRating = (ms) => RATING_TIERS.find((tier) => ms < tier.max) ?? RATING_TIERS[RATING_TIERS.length - 1];
+
+      const getPerfWidth = (ms) => {
+        const score = Math.max(0, Math.min(1, (550 - ms) / 450));
+        return `${Math.round(10 + score * 90)}%`;
+      };
+
+      function App() {
+        const [phase, setPhase] = useState(GAME_STATES.IDLE);
+        const [results, setResults] = useState([]);
+        const [latestReaction, setLatestReaction] = useState(null);
+        const [ripples, setRipples] = useState([]);
+        const [burstSeed, setBurstSeed] = useState(0);
+        const [animatedAverage, setAnimatedAverage] = useState(0);
+
+        const timeoutRef = useRef(null);
+        const readyStartRef = useRef(0);
+        const rippleIdRef = useRef(0);
+
+        const average = useMemo(() => {
+          if (!results.length) return 0;
+          return Math.round(results.reduce((sum, value) => sum + value, 0) / results.length);
+        }, [results]);
+
+        const clearPendingTimeout = useCallback(() => {
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
+        }, []);
+
+        const startWaiting = useCallback(() => {
+          clearPendingTimeout();
+          readyStartRef.current = 0;
+          setPhase(GAME_STATES.WAITING);
+          setLatestReaction(null);
+          const delay = Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS + 1)) + MIN_DELAY_MS;
+
+          timeoutRef.current = setTimeout(() => {
+            readyStartRef.current = performance.now();
+            setBurstSeed((prev) => prev + 1);
+            setPhase(GAME_STATES.READY);
+            timeoutRef.current = null;
+          }, delay);
+        }, [clearPendingTimeout]);
+
+        const resetGame = useCallback(() => {
+          clearPendingTimeout();
+          readyStartRef.current = 0;
+          setResults([]);
+          setLatestReaction(null);
+          setRipples([]);
+          setAnimatedAverage(0);
+          setPhase(GAME_STATES.IDLE);
+        }, [clearPendingTimeout]);
+
+        const addRipple = useCallback((event) => {
+          const targetRect = event.currentTarget.getBoundingClientRect();
+          const hasPointer =
+            typeof event.clientX === "number" &&
+            typeof event.clientY === "number";
+          const x = hasPointer
+            ? event.clientX - targetRect.left
+            : targetRect.width / 2;
+          const y = hasPointer
+            ? event.clientY - targetRect.top
+            : targetRect.height / 2;
+          const id = rippleIdRef.current++;
+
+          setRipples((prev) => [...prev, { id, x, y }]);
+
+          window.setTimeout(() => {
+            setRipples((prev) => prev.filter((ripple) => ripple.id !== id));
+          }, RIPPLE_DURATION_MS);
+        }, []);
+
+        useEffect(() => {
+          return () => {
+            clearPendingTimeout();
+          };
+        }, [clearPendingTimeout]);
+
+        useEffect(() => {
+          if (phase !== GAME_STATES.FINISHED) {
+            setAnimatedAverage(0);
+            return;
+          }
+
+          const target = average;
+          const duration = 1100;
+          const start = performance.now();
+          let rafId = 0;
+
+          const tick = (now) => {
+            const progress = Math.min(1, (now - start) / duration);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setAnimatedAverage(Math.round(target * eased));
+            if (progress < 1) {
+              rafId = window.requestAnimationFrame(tick);
+            }
+          };
+
+          rafId = window.requestAnimationFrame(tick);
+
+          return () => {
+            window.cancelAnimationFrame(rafId);
+          };
+        }, [phase, average]);
+
+        const handleClick = useCallback(
+          (event) => {
+            addRipple(event);
+
+            switch (phase) {
+              case GAME_STATES.IDLE:
+                startWaiting();
+                break;
+
+              case GAME_STATES.WAITING:
+                clearPendingTimeout();
+                setPhase(GAME_STATES.TOO_SOON);
+                break;
+
+              case GAME_STATES.READY: {
+                const reaction = Math.round(performance.now() - readyStartRef.current);
+                const nextResults = [...results, reaction];
+                setResults(nextResults);
+                setLatestReaction(reaction);
+                setPhase(GAME_STATES.RESULT);
+                break;
+              }
+
+              case GAME_STATES.TOO_SOON:
+                startWaiting();
+                break;
+
+              case GAME_STATES.RESULT:
+                if (results.length >= TOTAL_ROUNDS) {
+                  setPhase(GAME_STATES.FINISHED);
+                } else {
+                  startWaiting();
+                }
+                break;
+
+              case GAME_STATES.FINISHED:
+              default:
+                break;
+            }
+          },
+          [addRipple, clearPendingTimeout, phase, results, startWaiting]
+        );
+
+        const roundLabel = Math.min(results.length + 1, TOTAL_ROUNDS);
+        const latestRating = latestReaction == null ? null : getRating(latestReaction);
+        const averageRating = getRating(average || 999);
+        const showSparkles = phase === GAME_STATES.FINISHED && average > 0 && average < 250;
+
+        return (
+          <div
+            className={`app state-${phase.toLowerCase()}`}
+            onClick={handleClick}
+            role="button"
+            tabIndex={0}
+            aria-label="Reaction time game area"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleClick(event);
+              }
+            }}
+          >
+            <div className="ambient" aria-hidden="true">
+              <span className="orb orb-1" />
+              <span className="orb orb-2" />
+              <span className="orb orb-3" />
+            </div>
+
+            <div className="particle-layer" aria-hidden="true">
+              {PARTICLES.map((particle, index) => (
+                <span
+                  key={index}
+                  className="particle"
+                  style={{
+                    "--left": particle.left,
+                    "--size": particle.size,
+                    "--dur": particle.dur,
+                    "--delay": particle.delay,
+                  }}
+                />
+              ))}
+            </div>
+
+            {phase === GAME_STATES.READY && <div key={burstSeed} className="ready-flash" aria-hidden="true" />}
+
+            {ripples.map((ripple) => (
+              <span
+                key={ripple.id}
+                className="ripple"
+                style={{ left: `${ripple.x}px`, top: `${ripple.y}px` }}
+                aria-hidden="true"
+              />
+            ))}
+
+            <div className="scanline" aria-hidden="true" />
+
+            <main className="panel">
+              {phase !== GAME_STATES.FINISHED ? (
+                <>
+                  <section className="hud">
+                    <span className="badge">Round {roundLabel} / {TOTAL_ROUNDS}</span>
+                    <span className="pulse-pill">{phase === GAME_STATES.WAITING ? "Hold..." : "Tap Area"}</span>
+                  </section>
+
+                  <section className="live-stage">
+                    {phase === GAME_STATES.IDLE && (
+                      <>
+                        <p className="kicker">Reaction Time Protocol</p>
+                        <h1 className="headline idle">Click to Start</h1>
+                        <p className="subtext">When the panel turns green, click as fast as you can.</p>
+                      </>
+                    )}
+
+                    {phase === GAME_STATES.WAITING && (
+                      <>
+                        <p className="kicker">Stay Focused</p>
+                        <h1 className="headline waiting">Wait for Green</h1>
+                        <p className="subtext">Clicking early triggers a false start.</p>
+                      </>
+                    )}
+
+                    {phase === GAME_STATES.READY && (
+                      <>
+                        <p className="kicker">Now</p>
+                        <h1 className="headline ready">CLICK!</h1>
+                        <p className="subtext">Strike immediately.</p>
+                      </>
+                    )}
+
+                    {phase === GAME_STATES.TOO_SOON && (
+                      <>
+                        <p className="kicker">Penalty</p>
+                        <h1 className="headline too-soon" data-text="Too Soon!">Too Soon!</h1>
+                        <p className="subtext">False start detected. Click to retry this round.</p>
+                      </>
+                    )}
+
+                    {phase === GAME_STATES.RESULT && latestReaction != null && latestRating && (
+                      <div className="result-shell">
+                        <p className="kicker">Reaction</p>
+                        <h2 className="reaction-number">{latestReaction}ms</h2>
+                        <div className="rating-chip" style={{ color: latestRating.color }}>
+                          {latestRating.icon} {latestRating.label}
+                        </div>
+                        <p className="subtext">Click to continue</p>
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="state-guide" aria-live="polite">
+                    {phase === GAME_STATES.IDLE && "Tap anywhere to begin."}
+                    {phase === GAME_STATES.WAITING && "Do not click yet."}
+                    {phase === GAME_STATES.READY && "Click immediately."}
+                    {phase === GAME_STATES.TOO_SOON && "Click to retry this round."}
+                    {phase === GAME_STATES.RESULT && (results.length >= TOTAL_ROUNDS ? "Click to reveal final results." : "Click for next round.")}
+                  </section>
+                </>
+              ) : (
+                <section className="finished">
+                  <header className="average-wrap">
+                    <div>
+                      <p className="average-label">5 Rounds Complete</p>
+                      <h1 className="finished-title">Reflex Report</h1>
+                    </div>
+                    <div>
+                      <p className="average-label">Average</p>
+                      <p className="average-number">{animatedAverage}ms</p>
+                    </div>
+                  </header>
+
+                  <div className="rating-chip summary-rating" style={{ color: averageRating.color }}>
+                    {averageRating.icon} {averageRating.label}
+                  </div>
+
+                  <div className="round-grid" aria-label="Round Results">
+                    {results.map((time, index) => {
+                      const rating = getRating(time);
+                      return (
+                        <article
+                          key={`${index}-${time}`}
+                          className="round-card"
+                          style={{ animationDelay: `${0.2 + index * 0.1}s` }}
+                        >
+                          <div className="round-head">
+                            <span>Round {index + 1}</span>
+                            <span style={{ color: rating.color }}>{rating.icon}</span>
+                          </div>
+                          <div className="round-ms">{time}ms</div>
+                          <div className="perf-bar" role="presentation">
+                            <div className="perf-fill" style={{ width: getPerfWidth(time) }} />
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    className="restart-btn"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      resetGame();
+                    }}
+                  >
+                    Play Again
+                  </button>
+                </section>
+              )}
+            </main>
+
+            {showSparkles && (
+              <div className="sparkle-wrap" aria-hidden="true">
+                {SPARKLES.map((sparkle, index) => (
+                  <span
+                    key={index}
+                    className="spark"
+                    style={{ "--left": sparkle.left, "--delay": sparkle.delay }}
+                  />
+                ))}
+              </div>
+            )}
+
+            <span className="sr-only" aria-live="polite">
+              {phase === GAME_STATES.READY ? "Click now" : ""}
+            </span>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
