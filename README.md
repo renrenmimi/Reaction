@@ -1,4 +1,4 @@
-# Reaction Time Test ⚡
+# Reaction Time Test
 
 **▶ [Try it](https://renrenmimi.github.io/Reaction/)** — runs in your browser, nothing to install.
 
