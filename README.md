@@ -4,6 +4,8 @@
 
 How fast are you, really? Wait for the screen to turn green, then click as fast as you can.
 
+![Wait for green, then click](docs/screenshot.jpg)
+
 ## How it works
 
 1. Click to start
