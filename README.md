@@ -15,4 +15,4 @@ How fast are you, really? Wait for the screen to turn green, then click as fast 
 
 ## Tech
 
-Single-file HTML5 app. No build step, no dependencies.
+One `index.html` file.
